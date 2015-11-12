@@ -150,6 +150,25 @@ void aSsErT(int c, const char *s, int i) {
 //-----------------------------------------------------------------------------
 
 
+// In optimized builds, some compilers will elide some of the operations in the
+// destructors of the test classes defined below.  In order to force the
+// compiler to retain all of the code in the destructors, we provide the
+// following function that can be used to (conditionally) print out some of the
+// state of a data member.  If the destructor calls this function after
+// updating a data member, then the value set in the destructor will have
+// visible side-effects, but normal test runs do not have to be burdened with
+// additional output.
+
+static bool forceDestructorCall = false;
+
+template <class DATA_TYPE>
+void dumpData(const DATA_TYPE& data)
+{
+    if (forceDestructorCall) {
+        printf("%p: %c\n", &data, *reinterpret_cast<const char *>(&data));
+    }
+}
+
 //=============================================================================
 //                  GLOBAL TYPEDEFS/CONSTANTS FOR TESTING
 //-----------------------------------------------------------------------------
@@ -437,11 +456,11 @@ struct AttribStruct5
 {
     // This test struct has up to 5 attributes of different types.  It is a
     // simple aggregate type so it can be statically constructed.
-    char        d_a;
-    int         d_b;
-    double      d_c;
-    const char *d_d;
-    Uniq       *d_e;
+    char          d_a;
+    volatile int  d_b;
+    double        d_c;
+    const char   *d_d;
+    Uniq         *d_e;
 };
 
 class AttribClass5
@@ -474,13 +493,24 @@ class AttribClass5
     AttribClass5(const AttribClass5& other)
         : d_attrib(other.d_attrib) { ++d_ctorCount; }
 
-    ~AttribClass5() { d_attrib.d_b = 0xdeadbeaf; ++d_dtorCount; }
+    ~AttribClass5()
+    {
+        d_attrib.d_b = 0xdeadbeaf;
+        ++d_dtorCount;
+
+      dumpData(d_attrib.d_b);
+      dumpData(d_dtorCount);
+    }
 
     char        a() const { return d_attrib.d_a; }
     int         b() const { return d_attrib.d_b; }
     double      c() const { return d_attrib.d_c; }
     const char *d() const { return d_attrib.d_d; }
     Uniq       *e() const { return d_attrib.d_e; }
+
+    const volatile int* adddressOfB() const { return &d_attrib.d_b; }
+        // Return the address of a data member that can be used to inspect the
+        // state of memory after this object has been destroyed.
 
     AllocatorType allocator() const { return bslma::Default::allocator(0); }
 };
@@ -532,6 +562,10 @@ class AttribClass5Alloc
 
     AllocatorType allocator() const { return d_allocator; }
 
+    const volatile int* adddressOfB() const { return d_attrib.adddressOfB(); }
+        // Return the address of a data member that can be used to inspect the
+        // state of memory after this object has been destroyed.
+
     friend void operator&(AttribClass5Alloc&) { }
 };
 
@@ -544,8 +578,8 @@ namespace bslma {
         bsl::is_convertible<bslma::Allocator*, ALLOC>::type
     {
     };
-} // namespace bslma
-} // namespace BloombergLP
+}  // close namespace bslma
+}  // close enterprise namespace
 
 class AttribClass5bslma
 {
@@ -592,6 +626,10 @@ class AttribClass5bslma
     Uniq       *e() const { return d_attrib.e(); }
 
     bslma::Allocator *allocator() const { return d_allocator_p; }
+
+    const volatile int* adddressOfB() const { return d_attrib.adddressOfB(); }
+        // Return the address of a data member that can be used to inspect the
+        // state of memory after this object has been destroyed.
 };
 
 template <class TYPE>
@@ -692,7 +730,7 @@ inline bool isMutable(const TYPE& /* x */) { return false; }
     struct HasStlIterators<MyContainer<TYPE, ALLOC> > : bsl::true_type
     {};
 
-    } // namespace bslalg
+    }  // close namespace bslalg
 
     namespace bslmf {
 
@@ -701,7 +739,7 @@ inline bool isMutable(const TYPE& /* x */) { return false; }
         : IsBitwiseMoveable<ALLOC>
     {};
 
-    } // namespace bslmf
+    }  // close namespace bslmf
 
     namespace bslma {
 
@@ -710,8 +748,8 @@ inline bool isMutable(const TYPE& /* x */) { return false; }
         : bsl::is_convertible<Allocator*, ALLOC>
     {};
 
-    }  // namespace bslma
-    }  // namespace BloombergLP
+    }  // close namespace bslma
+    }  // close enterprise namespace
 //..
 // Then we implement the constructors, which allocate memory and construct a
 // 'TYPE' object in the allocated memory.  Because the allocation and
@@ -1563,11 +1601,11 @@ void testConstructDestroy(const char *allocname,
                      matchAttrib(objects[6].object(), A, B, C, D, E, exp_a));
 
         for (int j = 0; j < 7; ++j) {
+            const volatile int *b_p = objects[i].object().adddressOfB();
             TraitsT::destroy(a, bsls::Util::addressOf(objects[i].object()));
             LOOP3_ASSERT(allocname,tname,i, C::ctorCount() == expCtorCount);
             LOOP3_ASSERT(allocname,tname,i, C::dtorCount() == ++expDtorCount);
-            LOOP3_ASSERT(allocname,tname,i,
-                         0xdeadbeaf == (unsigned) objects[i].object().b());
+            LOOP3_ASSERT(allocname,tname,i, (int)0xdeadbeaf == *b_p);
         }
     }
 }
@@ -1582,6 +1620,11 @@ int main(int argc, char *argv[])
     verbose = argc > 2;
     veryVerbose = argc > 3;
     veryVeryVerbose = argc > 4;
+
+    // Output triggered by 'forceDestructorCall' is not meaningful, so
+    // de-couple output from test driver verbosity.
+
+    forceDestructorCall = argc > 6;
 
     setbuf(stdout, NULL);    // Use unbuffered output
 

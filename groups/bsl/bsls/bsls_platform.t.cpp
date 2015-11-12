@@ -6,6 +6,7 @@
 
 #include <stdio.h>      // 'printf'
 #include <stdlib.h>     // 'atoi'
+#include <string.h>     // 'strcmp', 'strlen'
 
 
 using namespace BloombergLP;
@@ -46,10 +47,10 @@ bool isBigEndian()
     u.d_int = 0x1;
 
     if (u.d_char[0] == 0x1) {
-        return false;
+        return false;                                                 // RETURN
     }
     else if (u.d_char[sizeof(int) - 1] == 0x1) {
-        return true;
+        return true;                                                  // RETURN
     }
     else {
         ASSERT(0);      // Neither big endian nor little endian!
@@ -73,10 +74,10 @@ bool isLittleEndian()
     u.d_int = 0x1;
 
     if (u.d_char[0] == 0x1) {
-        return true;
+        return true;                                                  // RETURN
     }
     else if (u.d_char[sizeof(int) - 1] == 0x1) {
-        return false;
+        return false;                                                 // RETURN
     }
     else {
         ASSERT(0);      // Neither big endian nor little endian!
@@ -175,12 +176,14 @@ int main(int argc, char *argv[])
           printf("BSLS_PLATFORM_CMP_SUN == 0\n");
         #endif
         #ifdef BSLS_PLATFORM_CMP_VERSION
-          printf("BSLS_PLATFORM_CMP_VERSION == 1\n");
+          printf("BSLS_PLATFORM_CMP_VERSION == %d\n",
+                 BSLS_PLATFORM_CMP_VERSION);
         #else
           printf("BSLS_PLATFORM_CMP_VERSION == 0\n");
         #endif
         #ifdef BSLS_PLATFORM_CMP_VER_MAJOR
-          printf("BSLS_PLATFORM_CMP_VER_MAJOR == 1\n");
+          printf("BSLS_PLATFORM_CMP_VER_MAJOR == %d\n",
+                 BSLS_PLATFORM_CMP_VER_MAJOR);
         #else
           printf("BSLS_PLATFORM_CMP_VER_MAJOR == 0\n");
         #endif
@@ -330,12 +333,14 @@ int main(int argc, char *argv[])
           printf("BSLS_PLATFORM_OS_UNIX == 0\n");
         #endif
         #ifdef BSLS_PLATFORM_OS_VER_MAJOR
-          printf("BSLS_PLATFORM_OS_VER_MAJOR == 1\n");
+          printf("BSLS_PLATFORM_OS_VER_MAJOR == %d\n",
+                 BSLS_PLATFORM_OS_VER_MAJOR);
         #else
           printf("BSLS_PLATFORM_OS_VER_MAJOR == 0\n");
         #endif
         #ifdef BSLS_PLATFORM_OS_VER_MINOR
-          printf("BSLS_PLATFORM_OS_VER_MINOR == 1\n");
+          printf("BSLS_PLATFORM_OS_VER_MINOR == %d\n",
+                 BSLS_PLATFORM_OS_VER_MINOR);
         #else
           printf("BSLS_PLATFORM_OS_VER_MINOR == 0\n");
         #endif
@@ -534,6 +539,9 @@ int main(int argc, char *argv[])
         ASSERT(Y <= X);                                       \
         if (veryVerbose) cout << "\t"#X" = " << X << endl;
 
+#define STRINGIFY2(a) #a
+#define STRINGIFY(a) STRINGIFY2(a)
+
         #if defined(BSLS_PLATFORM_CMP_IBM)
             MACRO_TESTGT(BSLS_PLATFORM_CMP_IBM, 0);
         #endif
@@ -670,6 +678,22 @@ int main(int argc, char *argv[])
             MACRO_TESTEQ(BSLS_PLATFORM_IS_LITTLE_ENDIAN, 1);
         #endif
 
+        if (veryVerbose) cout << endl << "Print inlining symbol:" << endl;
+
+        if (veryVerbose) cout << "\t"
+                              << STRINGIFY2(BSLS_PLATFORM_AGGRESSIVE_INLINE)
+                              << " = \""
+                              << STRINGIFY(BSLS_PLATFORM_AGGRESSIVE_INLINE)
+                              << "\""
+                              << endl;
+
+        #if (defined(BSLS_PLATFORM_CMP_AIX) || defined(BSLS_PLATFORM_CMP_SUN))\
+            && !defined(BDE_BUILD_TARGET_AGGRESSIVE_INLINE)
+        ASSERT(0 == strlen(STRINGIFY(BSLS_PLATFORM_AGGRESSIVE_INLINE)));
+        #else
+        ASSERT(0 == strcmp(STRINGIFY(BSLS_PLATFORM_AGGRESSIVE_INLINE),
+                                     "inline"));
+        #endif
       } break;
       default: {
         cerr << "WARNING: CASE `" << test << "' NOT FOUND." << endl;

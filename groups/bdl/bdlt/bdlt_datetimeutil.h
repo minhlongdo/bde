@@ -24,6 +24,7 @@ BSLS_IDENT("$Id: $")
 //   int convertFromTm(bdlt::Datetime *result, const tm& timeStruct);
 //   bsl::tm convertToTm(const bdlt::Datetime& datetime);
 //..
+//
 ///Usage
 ///-----
 // This section illustrates intended use of this component.
@@ -259,7 +260,11 @@ int DatetimeUtil::convertFromTm(Datetime       *result,
 inline
 bsl::tm DatetimeUtil::convertToTm(const Datetime& datetime)
 {
-    bsl::tm    result;
+
+    // 'struct tm' may contain non POSIX standard fields (e.g., on Linux/OSX),
+    // which we want to 0 initialize.
+
+    bsl::tm result = {};
 
     result.tm_sec   = datetime.second();
     result.tm_min   = datetime.minute();

@@ -28,6 +28,10 @@ namespace bsl
     // Import selected symbols into bsl namespace
     using native_std::ptrdiff_t;
     using native_std::size_t;
+
+#if defined (BSLS_COMPILERFEATURES_SUPPORT_NULLPTR)
+    using native_std::nullptr_t;
+#endif
 }
 
 #endif

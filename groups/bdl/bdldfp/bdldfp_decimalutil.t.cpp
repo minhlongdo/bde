@@ -2,13 +2,12 @@
 #include <bdldfp_decimalutil.h>
 
 #include <bdldfp_decimal.h>
-#include <bdldfp_decimalconvertutil.h>
 #include <bdldfp_uint128.h>
 
-#include <bdls_testutil.h>
+#include <bslim_testutil.h>
 
-#include <bslma_testallocator.h>
 #include <bslma_defaultallocatorguard.h>
+#include <bslma_testallocator.h>
 
 #include <bsls_assert.h>
 #include <bsls_asserttest.h>
@@ -21,7 +20,6 @@
 #include <bsl_fstream.h>
 #include <bsl_limits.h>
 #include <bsl_iostream.h>
-#include <bsl_sstream.h>
 #include <bsl_string.h>
 #include <bsl_unordered_map.h>
 #include <bsl_vector.h>
@@ -56,64 +54,49 @@ using bsl::atoi;
 // [  ] USAGE EXAMPLE
 // ----------------------------------------------------------------------------
 
-
 // ============================================================================
-//                      STANDARD BDE ASSERT TEST MACROS
+//                     STANDARD BDE ASSERT TEST FUNCTION
 // ----------------------------------------------------------------------------
 
-static int testStatus = 0;
+namespace {
 
-static void aSsErT(int c, const char *s, int i)
+int testStatus = 0;
+
+void aSsErT(bool condition, const char *message, int line)
 {
-    if (c) {
-        cout << "Error " << __FILE__ << "(" << i << "): " << s
+    if (condition) {
+        cout << "Error " __FILE__ "(" << line << "): " << message
              << "    (failed)" << endl;
-        if (testStatus >= 0 && testStatus <= 100) ++testStatus;
+
+        if (0 <= testStatus && testStatus <= 100) {
+            ++testStatus;
+        }
     }
 }
-#define ASSERT(X) { aSsErT(!(X), #X, __LINE__); }
+
+}  // close unnamed namespace
 
 // ============================================================================
-//                  STANDARD BDE LOOP-ASSERT TEST MACROS
+//               STANDARD BDE TEST DRIVER MACRO ABBREVIATIONS
 // ----------------------------------------------------------------------------
 
-#define LOOP_ASSERT(I,X) { \
-   if (!(X)) { cout << #I << ": " << I << "\n"; aSsErT(1, #X, __LINE__); }}
+#define ASSERT       BSLIM_TESTUTIL_ASSERT
+#define ASSERTV      BSLIM_TESTUTIL_ASSERTV
 
-#define LOOP2_ASSERT(I,J,X) { \
-   if (!(X)) { cout << #I << ": " << I << "\t" << #J << ": " \
-              << J << "\n"; aSsErT(1, #X, __LINE__); } }
+#define LOOP_ASSERT  BSLIM_TESTUTIL_LOOP_ASSERT
+#define LOOP0_ASSERT BSLIM_TESTUTIL_LOOP0_ASSERT
+#define LOOP1_ASSERT BSLIM_TESTUTIL_LOOP1_ASSERT
+#define LOOP2_ASSERT BSLIM_TESTUTIL_LOOP2_ASSERT
+#define LOOP3_ASSERT BSLIM_TESTUTIL_LOOP3_ASSERT
+#define LOOP4_ASSERT BSLIM_TESTUTIL_LOOP4_ASSERT
+#define LOOP5_ASSERT BSLIM_TESTUTIL_LOOP5_ASSERT
+#define LOOP6_ASSERT BSLIM_TESTUTIL_LOOP6_ASSERT
 
-#define LOOP3_ASSERT(I,J,K,X) { \
-   if (!(X)) { cout << #I << ": " << I << "\t" << #J << ": " << J << "\t" \
-              << #K << ": " << K << "\n"; aSsErT(1, #X, __LINE__); } }
-
-#define LOOP4_ASSERT(I,J,K,L,X) { \
-   if (!(X)) { cout << #I << ": " << I << "\t" << #J << ": " << J << "\t" << \
-       #K << ": " << K << "\t" << #L << ": " << L << "\n"; \
-       aSsErT(1, #X, __LINE__); } }
-
-#define LOOP5_ASSERT(I,J,K,L,M,X) { \
-   if (!(X)) { cout << #I << ": " << I << "\t" << #J << ": " << J << "\t" << \
-       #K << ": " << K << "\t" << #L << ": " << L << "\t" << \
-       #M << ": " << M << "\n"; \
-       aSsErT(1, #X, __LINE__); } }
-
-#define LOOP6_ASSERT(I,J,K,L,M,N,X) { \
-   if (!(X)) { cout << #I << ": " << I << "\t" << #J << ": " << J << "\t" << \
-       #K << ": " << K << "\t" << #L << ": " << L << "\t" << \
-       #M << ": " << M << "\t" << #N << ": " << N << "\n"; \
-       aSsErT(1, #X, __LINE__); } }
-
-// ============================================================================
-//                  SEMI-STANDARD TEST OUTPUT MACROS
-// ----------------------------------------------------------------------------
-
-#define P(X) cout << #X " = " << (X) << endl; // Print identifier and value.
-#define Q(X) cout << "<| " #X " |>" << endl;  // Quote identifier literally.
-#define P_(X) cout << #X " = " << (X) << ", "<< flush; // 'P(X)' without '\n'
-#define T_ cout << "\t" << flush;             // Print tab w/o newline.
-#define L_ __LINE__                           // current Line number
+#define Q            BSLIM_TESTUTIL_Q   // Quote identifier literally.
+#define P            BSLIM_TESTUTIL_P   // Print identifier and value.
+#define P_           BSLIM_TESTUTIL_P_  // P(X) without '\n'.
+#define T_           BSLIM_TESTUTIL_T_  // Print a tab (w/o newline).
+#define L_           BSLIM_TESTUTIL_L_  // current Line number
 
 // ============================================================================
 //                  GLOBAL TYPEDEFS/CONSTANTS FOR TESTING
@@ -154,7 +137,7 @@ struct SymbolDataDecimal64 {
     BDEC::Decimal64    d_low;
     BDEC::Decimal64    d_high;
     BDEC::Decimal64    d_valueTraded;
-    double             d_vwap;
+    BDEC::Decimal64    d_vwap;
     unsigned long long d_volume;
 };
 
@@ -335,7 +318,7 @@ BDEC::DecimalImpUtil::ValueType64 makeDecimalRaw64Zero(long long mantissa,
     if (0 == mantissa) {
         DpdUtil::StorageType64 value = DpdUtil::makeDecimalRaw64(mantissa,
                                                                  exponent);
-        return bdldfp::DecimalImpUtil::convertFromDPD(value);
+        return bdldfp::DecimalImpUtil::convertFromDPD(value);         // RETURN
     }
 
 #endif
@@ -353,38 +336,22 @@ BDEC::DecimalImpUtil::ValueType128 makeDecimalRaw128Zero(long long mantissa,
 {
 #if defined(BDLDFP_DECIMALPLATFORM_INTELDFP)
     if (0 == mantissa) {
-        DpdUtil::StorageType128 value = 
+        DpdUtil::StorageType128 value =
             DpdUtil::makeDecimalRaw128(mantissa, exponent);
-        return bdldfp::DecimalImpUtil::convertFromDPD(value);
+        return bdldfp::DecimalImpUtil::convertFromDPD(value);         // RETURN
     }
 #endif
     return BDEC::DecimalImpUtil::makeDecimalRaw128(mantissa, exponent);
 }
 
 
-}  // closing unnamed namespace.
+}  // close unnamed namespace
 
 //=============================================================================
 //              GLOBAL HELPER FUNCTIONS AND CLASSES FOR TESTING
 //-----------------------------------------------------------------------------
 
-                 // stringstream helpers - not thread safe!
-
-void getStringFromStream(bsl::ostringstream &o, bsl::string  *out)
-{
-    bslma::TestAllocator osa("osstream");
-    bslma::DefaultAllocatorGuard g(&osa);
-    *out = o.str();
-}
-
-void getStringFromStream(bsl::wostringstream &o, bsl::wstring *out)
-{
-    bslma::TestAllocator osa("osstream");
-    bslma::DefaultAllocatorGuard g(&osa);
-    *out = o.str();
-}
-
- // String compare for decimal floating point numbers needs 'e'/'E' conversion
+// String compare for decimal floating point numbers needs 'e'/'E' conversion
 
 bsl::string& decLower(bsl::string& s)
 {
@@ -1713,7 +1680,7 @@ int main(int argc, char* argv[])
             {
                 BDEC::Decimal64 value = makeDecimalRaw64Zero(0, 0);
 
-                DpdUtil::StorageType64 ACTUAL = 
+                DpdUtil::StorageType64 ACTUAL =
                                 ImpUtil::convertToDPD(*value.data());
                 unsigned long long EXPECTED = 0x2238000000000000ull;
                 ASSERT(!bsl::memcmp(&ACTUAL, &EXPECTED, 8));
@@ -1722,7 +1689,7 @@ int main(int argc, char* argv[])
             {
                 BDEC::Decimal64 value = makeDecimalRaw64Zero(0, 5);
 
-                DpdUtil::StorageType64 ACTUAL = 
+                DpdUtil::StorageType64 ACTUAL =
                                 ImpUtil::convertToDPD(*value.data());
                 unsigned long long EXPECTED = 0x224C000000000000ull;
                 ASSERT(!bsl::memcmp(&ACTUAL, &EXPECTED, 8));
@@ -1731,7 +1698,7 @@ int main(int argc, char* argv[])
             {
                 BDEC::Decimal64 value = makeDecimalRaw64Zero(0, -5);
 
-                DpdUtil::StorageType64 ACTUAL = 
+                DpdUtil::StorageType64 ACTUAL =
                                 ImpUtil::convertToDPD(*value.data());
                 unsigned long long EXPECTED = 0x2224000000000000ull;
                 ASSERT(!bsl::memcmp(&ACTUAL, &EXPECTED, 8));
@@ -1769,7 +1736,7 @@ int main(int argc, char* argv[])
             {
                 BDEC::Decimal128 value = makeDecimalRaw128Zero(0, 0);
 
-                DpdUtil::StorageType128 ACTUAL = 
+                DpdUtil::StorageType128 ACTUAL =
                                 ImpUtil::convertToDPD(*value.data());
                 BloombergLP::bdldfp::Uint128 EXPECTED(
                                  0x2208000000000000ull, 0x0000000000000000ull);
@@ -1781,7 +1748,7 @@ int main(int argc, char* argv[])
             {
                 BDEC::Decimal128 value = makeDecimalRaw128Zero(0, 5);
 
-                DpdUtil::StorageType128 ACTUAL = 
+                DpdUtil::StorageType128 ACTUAL =
                                 ImpUtil::convertToDPD(*value.data());
                 BloombergLP::bdldfp::Uint128 EXPECTED(
                                  0x2209400000000000ull, 0x0000000000000000ull);
@@ -1792,7 +1759,7 @@ int main(int argc, char* argv[])
             {
                 BDEC::Decimal128 value = makeDecimalRaw128Zero(0, -5);
 
-                DpdUtil::StorageType128 ACTUAL = 
+                DpdUtil::StorageType128 ACTUAL =
                                 ImpUtil::convertToDPD(*value.data());
                 BloombergLP::bdldfp::Uint128 EXPECTED(
                                  0x2206C00000000000ull, 0x0000000000000000ull);
@@ -2682,7 +2649,7 @@ int main(int argc, char* argv[])
         for (size_type i = 0; i < data.size(); ++i) {
             const bsl::string& symbol = data[i].d_symbol;
             if (symbol2Index.find(symbol) == symbol2Index.end()) {
-                symbol2Index[symbol] = ++numSymbols;
+                symbol2Index[symbol] = numSymbols++;
             }
         }
 
@@ -2693,7 +2660,7 @@ int main(int argc, char* argv[])
             Util::parseDecimal64(&d.d_low , "+inf");
             Util::parseDecimal64(&d.d_high, "-inf");
             d.d_valueTraded = BDEC::Decimal64(0);
-            d.d_vwap = 0.0;
+            d.d_vwap = BDEC::Decimal64(0);
             d.d_volume = 0;
             symbolData.push_back(d);
         }
@@ -2722,9 +2689,7 @@ int main(int argc, char* argv[])
             symbolData[index].d_valueTraded += price * data[i].d_quantity;
             symbolData[index].d_volume += data[i].d_quantity;
             symbolData[index].d_vwap =
-                BloombergLP::bdldfp::DecimalConvertUtil::decimalToDouble
-                (symbolData[index].d_valueTraded /
-                 symbolData[index].d_volume);
+                symbolData[index].d_valueTraded / symbolData[index].d_volume;
         }
 
         const double totalTime = s.accumulatedWallTime();
@@ -2767,7 +2732,7 @@ int main(int argc, char* argv[])
         for (size_type i = 0; i < data.size(); ++i) {
             const bsl::string& symbol = data[i].d_symbol;
             if (symbol2Index.find(symbol) == symbol2Index.end()) {
-                symbol2Index[symbol] = ++numSymbols;
+                symbol2Index[symbol] = numSymbols++;
             }
         }
 
@@ -2870,7 +2835,7 @@ int main(int argc, char* argv[])
         for (size_type i = 0; i < data.size(); ++i) {
             const bsl::string& symbol = data[i].d_symbol;
             if (symbol2Index.find(symbol) == symbol2Index.end()) {
-                symbol2Index[symbol] = ++numSymbols;
+                symbol2Index[symbol] = numSymbols++;
             }
         }
 
@@ -2881,7 +2846,7 @@ int main(int argc, char* argv[])
             Util::parseDecimal64(&d.d_low , "+inf");
             Util::parseDecimal64(&d.d_high, "-inf");
             d.d_valueTraded = BDEC::Decimal64(0);
-            d.d_vwap = 0.0;
+            d.d_vwap = BDEC::Decimal64(0);
             d.d_volume = 0;
             symbolData.push_back(d);
         }
@@ -2910,10 +2875,8 @@ int main(int argc, char* argv[])
                 }
                 symbolData[index].d_valueTraded += price * data[i].d_quantity;
                 symbolData[index].d_volume += data[i].d_quantity;
-                symbolData[index].d_vwap =
-                    BloombergLP::bdldfp::DecimalConvertUtil::decimalToDouble
-                    (symbolData[index].d_valueTraded /
-                     symbolData[index].d_volume);
+                symbolData[index].d_vwap = symbolData[index].d_valueTraded /
+                                           symbolData[index].d_volume;
             }
         }
 
@@ -2976,7 +2939,7 @@ int main(int argc, char* argv[])
         for (size_type i = 0; i < data.size(); ++i) {
             const bsl::string& symbol = data[i].d_symbol;
             if (symbol2Index.find(symbol) == symbol2Index.end()) {
-                symbol2Index[symbol] = ++numSymbols;
+                symbol2Index[symbol] = numSymbols++;
             }
         }
 

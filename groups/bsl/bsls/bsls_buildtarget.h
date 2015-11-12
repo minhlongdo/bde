@@ -32,8 +32,10 @@ BSLS_IDENT("$Id: $")
 // a macro that determines whether deprecated interfaces are available to
 // programs built on BDE:
 //
-//: o BDE_OMIT_DEPRECATED: This macro, if defined, indicates that all
-//:   deprecated code is excluded from a build of the library.
+//: 'BDE_OMIT_DEPRECATED':
+//:     This macro, if defined, indicates that all deprecated code is excluded
+//:     from a build of the library.
+//
 //
 ///Usage
 ///-----
@@ -130,6 +132,7 @@ BSLS_LINKCOERCION_FORCE_SYMBOL_DEPENDENCY(
                                         const int,
                                         bsls_buildtarget_assertion2,
                                         bsls::BuildTargetMt::s_isBuildTargetMt)
+
 
 }  // close enterprise namespace
 
